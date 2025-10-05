@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Viewer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = { darkMode: 'class' };
+    </script>
+    <style>
+        html.dark { background-color: #1a1a1a; }
+    </style>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
+    <script src="firebase.js"></script>
+</head>
+<body class="bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-gray-100">
+    <main class="max-w-3xl mx-auto p-4 space-y-6">
+        <header class="py-4">
+            <h1 id="title" class="text-2xl font-bold"></h1>
+            <div id="meta" class="text-sm text-gray-500"></div>
+        </header>
+        <article id="content" class="space-y-6"></article>
+        <section id="media" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></section>
+    </main>
+
+    <script>
+    (function(){
+      const { db } = window.initFirebaseApp();
+      const params = new URLSearchParams(location.search);
+      const projectId = params.get('project');
+      const titleEl = document.getElementById('title');
+      const metaEl = document.getElementById('meta');
+      const contentEl = document.getElementById('content');
+      const mediaEl = document.getElementById('media');
+
+      async function load() {
+        if (!projectId) { contentEl.innerHTML = '<div>Missing project id.</div>'; return; }
+        const doc = await db.collection('projects').doc(projectId).get();
+        if (!doc.exists) { contentEl.innerHTML = '<div>Project not found.</div>'; return; }
+        const p = doc.data();
+        titleEl.textContent = p.title || projectId;
+        metaEl.textContent = `Visibility: ${p.visibility || 'private'}`;
+
+        // Partial view logic: show only first 1-2 sections for client visibility
+        let sections = Array.isArray(p.sections) ? p.sections : [];
+        const visibleSections = (p.visibility === 'client') ? sections.slice(0, 2) : (p.visibility === 'public' ? sections : sections.slice(0, 0));
+
+        if (visibleSections.length === 0) {
+          contentEl.innerHTML = '<div class="text-sm text-gray-500">No preview available.</div>';
+        } else {
+          contentEl.innerHTML = visibleSections.map(s => `
+            <section>
+              <h2 class="text-xl font-semibold mb-2">${s.heading || ''}</h2>
+              <div class="prose prose-invert max-w-none">${s.html || ''}</div>
+            </section>
+          `).join('');
+        }
+
+        // Media: for client visibility, show all media; for private, none; for public, all
+        const media = Array.isArray(p.media) ? p.media : [];
+        const showMedia = (p.visibility === 'client' || p.visibility === 'public') ? media : [];
+        mediaEl.innerHTML = showMedia.map(m => {
+          if ((m.contentType||'').startsWith('image/')) {
+            return `<img src="${m.url}" alt="${m.name}" class="w-full h-48 object-cover rounded">`;
+          } else if ((m.contentType||'').startsWith('video/')) {
+            return `<video src="${m.url}" controls class="w-full rounded"></video>`;
+          }
+          return '';
+        }).join('');
+      }
+
+      load();
+    })();
+    </script>
+</body>
+</html>
+
+
