@@ -1,83 +1,815 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Owner Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script>
-        tailwind.config = { darkMode: 'class' };
-    </script>
-    <style>
-        html.dark { background-color: #1a1a1a; }
-    </style>
-    <!-- Firebase SDKs (compat for simplicity) -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-storage-compat.js"></script>
-    <script src="firebase.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Credit Risk Dashboard — Mwatha Maina Analytics</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+
+<style>
+:root {
+  /* --- PREMIUM WHITE & COLGATE GREEN PALETTE --- */
+  --bg:        #f8fafc;        /* Soft crisp white/slate tint background */
+  --bg2:       #ffffff;        /* Pure white for containers and cards */
+  --bg3:       #f1f5f9;        /* Light hover accent gray */
+  --border:    #e2e8f0;        /* Subtle divider gray */
+  --border2:   #cbd5e1;        /* Defined interactive border gray */
+  --text:      #0f172a;        /* Deep slate black for primary readability */
+  --text2:     #475569;        /* Muted corporate slate for subtitles */
+  --text3:     #94a3b8;        /* Light text for labels and counters */
+  --accent:    #00875a;        /* Colgate Emerald Green primary */
+  --accent2:   #0052cc;        /* Executive blue for alternative metrics */
+  --warn:      #d97706;        /* Controlled amber warning */
+  --danger:    #dc2626;        /* High-contrast red for bad assets */
+  --perf:      #00875a;        
+  --watch:     #d97706;        
+  --sub:       #dc2626;        
+  --mono:      'IBM Plex Mono', monospace;
+  --sans:      'IBM Plex Sans', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* --- TECHNICAL GRID CANVAS MESH --- */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,135,90,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,135,90,0.015) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* --- TOPBAR --- */
+#topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.96);
+  border-bottom: 2px solid var(--accent);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+#topbar .brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+#topbar .logo-mark {
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--accent);
+  border-radius: 4px;
+  background: rgba(0, 135, 90, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+#topbar .brand-text {
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+
+#topbar .brand-sub {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text2);
+  letter-spacing: 0.02em;
+  font-weight: 500;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+#status-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text2);
+  padding: 6px 12px;
+  border: 1px solid var(--border2);
+  background: var(--bg);
+  border-radius: 4px;
+}
+
+#status-pill .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border2);
+  transition: background 0.3s;
+}
+
+#status-pill.loaded {
+  border-color: rgba(0, 135, 90, 0.3);
+  background: rgba(0, 135, 90, 0.04);
+}
+
+#status-pill.loaded .dot { 
+  background: var(--accent); 
+  box-shadow: 0 0 8px rgba(0, 135, 90, 0.4); 
+}
+
+/* --- UPLOAD ZONE --- */
+#upload-zone {
+  position: relative;
+  z-index: 1;
+  margin: 32px auto 16px;
+  max-width: 1200px;
+  padding: 0 24px;
+}
+
+.upload-card {
+  border: 2px dashed var(--border2);
+  background: var(--bg2);
+  padding: 24px 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  cursor: pointer;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+
+.upload-card:hover, .upload-card.dragging {
+  border-color: var(--accent);
+  background: rgba(0, 135, 90, 0.02);
+  box-shadow: 0 4px 12px -1px rgba(0, 135, 90, 0.06);
+}
+
+.upload-icon {
+  font-size: 28px;
+  color: var(--accent);
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+
+.upload-text h2 {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.02em;
+  margin-bottom: 2px;
+}
+
+.upload-text p {
+  font-size: 12px;
+  color: var(--text2);
+}
+
+.upload-text p span {
+  color: var(--accent);
+  font-weight: 500;
+}
+
+#fileInput { display: none; }
+
+.upload-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 10px 18px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.upload-btn:hover {
+  background: var(--accent);
+  color: var(--bg2);
+}
+
+/* --- MAIN DASHBOARD --- */
+#dashboard {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px 24px 60px;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+  pointer-events: none;
+}
+
+#dashboard.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: all;
+}
+
+/* --- SECTION HEADERS --- */
+.section-label {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text2);
+  margin-bottom: 12px;
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-label::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 14px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+/* --- KPI ROW --- */
+#kpi-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.kpi-cell {
+  background: var(--bg2);
+  padding: 18px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.01);
+  position: relative;
+  overflow: hidden;
+}
+
+.kpi-cell::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 3px;
+  background: var(--accent-color, var(--accent));
+  transition: width 0.6s ease;
+}
+
+.kpi-cell.animated::after { width: 100%; }
+
+.kpi-label {
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text2);
+  margin-bottom: 6px;
+}
+
+.kpi-value {
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.1;
+  margin-bottom: 2px;
+}
+
+.kpi-sub {
+  font-family: var(--sans);
+  font-size: 10px;
+  color: var(--text3);
+}
+
+/* --- CHART GRID --- */
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.chart-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.01);
+}
+
+.chart-card .card-title {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chart-card .card-title .badge {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 6px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  border-radius: 3px;
+}
+
+.chart-canvas-wrap {
+  position: relative;
+  width: 100%;
+  height: 180px;
+}
+
+/* --- RISK MATRIX ROW --- */
+.matrix-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.tier-breakdown {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.01);
+}
+
+.tier-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--bg3);
+}
+
+.tier-row:last-child { border-bottom: none; }
+
+.tier-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tier-name {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  width: 90px;
+  flex-shrink: 0;
+}
+
+.tier-bar-wrap {
+  flex: 1;
+  height: 6px;
+  background: var(--bg3);
+  border-radius: 3px;
+  position: relative;
+  overflow: hidden;
+}
+
+.tier-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.8s ease;
+}
+
+.tier-stats {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text2);
+  text-align: right;
+  min-width: 80px;
+}
+
+.tier-stats strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* --- DPD HEATMAP --- */
+.dpd-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.01);
+}
+
+.dpd-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.dpd-cell {
+  padding: 14px 10px;
+  text-align: center;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  position: relative;
+  overflow: hidden;
+}
+
+.dpd-range {
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text2);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.dpd-count {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.dpd-pct {
+  font-family: var(--sans);
+  font-size: 10px;
+  color: var(--text3);
+}
+
+/* --- TABLE --- */
+.table-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.01);
+  overflow: hidden;
+}
+
+.table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+}
+
+.table-header h3 {
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.table-header .count-badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--danger);
+  background: rgba(220, 38, 38, 0.05);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+#riskTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+#riskTable thead tr {
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+}
+
+#riskTable th {
+  font-family: var(--sans);
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--text2);
+  padding: 12px 20px;
+  text-align: left;
+  font-weight: 600;
+}
+
+#riskTable td {
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 12px 20px;
+  color: var(--text2);
+  border-bottom: 1px solid var(--border);
+}
+
+#riskTable tbody tr:hover td { background: rgba(0, 135, 90, 0.015); color: var(--text); }
+#riskTable tbody tr:last-child td { border-bottom: none; }
+
+.td-id { color: var(--text) !important; font-weight: 600; }
+.td-kes { color: var(--text) !important; font-weight: 500; }
+
+.tier-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 600;
+  border-radius: 3px;
+  border: 1px solid;
+}
+
+.tier-badge.watch    { color: var(--watch); border-color: rgba(217,119,6,0.3); background: rgba(217,119,6,0.04); }
+.tier-badge.sub      { color: var(--danger); border-color: rgba(220,38,38,0.3); background: rgba(220,38,38,0.04); }
+.tier-badge.perf     { color: var(--perf);  border-color: rgba(0,135,90,0.3); background: rgba(0,135,90,0.04); }
+
+.dpd-num { color: var(--text2) !important; }
+.dpd-num.high { color: var(--danger) !important; font-weight: 600; }
+.dpd-num.mid  { color: var(--warn)   !important; font-weight: 600; }
+
+.repay-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.repay-mini-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--bg3);
+  max-width: 60px;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.repay-mini-fill {
+  height: 100%;
+  background: var(--accent);
+}
+
+/* --- FOOTER --- */
+#footer {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 32px 24px;
+  margin-top: 40px;
+  border-top: 1px solid var(--border);
+  background: var(--bg2);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text3);
+  letter-spacing: 0.04em;
+}
+
+/* --- SCROLLBAR --- */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* --- RESPONSIVE --- */
+@media (max-width: 1024px) {
+  .chart-grid { grid-template-columns: 1fr 1fr; }
+  .chart-grid > div:last-child { grid-column: span 2; }
+}
+
+@media (max-width: 768px) {
+  #kpi-row { grid-template-columns: repeat(3, 1fr); }
+  .chart-grid { grid-template-columns: 1fr; }
+  .chart-grid > div:last-child { grid-column: span 1; }
+  .matrix-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 520px) {
+  #kpi-row { grid-template-columns: repeat(2, 1fr); }
+  #topbar { padding: 0 16px; }
+}
+</style>
 </head>
-<body class="bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-gray-100">
-    <header class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-        <h1 class="text-xl font-semibold">Owner Dashboard</h1>
-        <div class="space-x-2">
-            <span id="user-email" class="text-sm text-gray-500"></span>
-            <button id="sign-in-btn" class="px-3 py-2 bg-blue-600 text-white rounded">Sign In</button>
-            <button id="sign-out-btn" class="px-3 py-2 bg-gray-700 text-white rounded hidden">Sign Out</button>
-        </div>
-    </header>
+<body>
 
-    <main class="max-w-4xl mx-auto p-4 space-y-8">
-        <!-- Create Project -->
-        <section class="p-4 rounded border border-gray-200 dark:border-gray-700">
-            <h2 class="text-lg font-semibold mb-4">Create or Update Project</h2>
-            <form id="project-form" class="space-y-4">
-                <div>
-                    <label class="block text-sm mb-1">Project ID (a-z0-9-dash)</label>
-                    <input id="project-id" class="w-full px-3 py-2 rounded bg-white dark:bg-[#2d2d2d] border border-gray-300 dark:border-gray-600" placeholder="e.g., client-acme-q4-report" required>
-                </div>
-                <div>
-                    <label class="block text-sm mb-1">Title</label>
-                    <input id="title" class="w-full px-3 py-2 rounded bg-white dark:bg-[#2d2d2d] border border-gray-300 dark:border-gray-600" required>
-                </div>
-                <div>
-                    <label class="block text-sm mb-1">Visibility</label>
-                    <select id="visibility" class="w-full px-3 py-2 rounded bg-white dark:bg-[#2d2d2d] border border-gray-300 dark:border-gray-600">
-                        <option value="private">Private (owner only)</option>
-                        <option value="client">Client preview</option>
-                        <option value="public">Public</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm mb-1">Sections (JSON array of {heading, html})</label>
-                    <textarea id="sections" rows="6" class="w-full px-3 py-2 rounded bg-white dark:bg-[#2d2d2d] border border-gray-300 dark:border-gray-600" placeholder='[
-  {"heading":"Intro","html":"<p>Summary...</p>"},
-  {"heading":"Findings","html":"<ul><li>...</li></ul>"}
-]'></textarea>
-                </div>
-                <div>
-                    <label class="block text-sm mb-2">Upload Media (images/videos)</label>
-                    <input id="media-files" type="file" multiple accept="image/*,video/*" class="block">
-                    <div id="upload-progress" class="text-sm text-gray-500 mt-2"></div>
-                </div>
-                <div class="flex gap-2">
-                    <button id="save-project" type="submit" class="px-4 py-2 bg-green-600 text-white rounded">Save Project</button>
-                    <a id="viewer-link" href="#" target="_blank" class="px-4 py-2 border rounded">Open Client Viewer</a>
-                </div>
-            </form>
-        </section>
+<!-- TOPBAR -->
+<header id="topbar">
+  <div class="brand">
+    <div class="logo-mark">CR</div>
+    <div>
+      <div class="brand-text">CREDIT RISK DASHBOARD</div>
+      <div class="brand-sub">Mwatha Maina Analytics · SASRA Framework</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div id="status-pill">
+      <span class="dot"></span>
+      <span id="status-text">AWAITING DATA</span>
+    </div>
+  </div>
+</header>
 
-        <!-- Existing Projects -->
-        <section class="p-4 rounded border border-gray-200 dark:border-gray-700">
-            <h2 class="text-lg font-semibold mb-4">Projects</h2>
-            <div id="projects-list" class="space-y-2"></div>
-        </section>
-    </main>
+<!-- UPLOAD ZONE -->
+<section id="upload-zone">
+  <div class="upload-card" id="uploadCard">
+    <div class="upload-icon">📥</div>
+    <div class="upload-text">
+      <h2>LOAD PORTFOLIO LEDGER</h2>
+      <p>Drop <span>cleaned_credit_matrix.csv</span> here or click to register data matrix</p>
+    </div>
+    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">SELECT FILE</button>
+    <input type="file" id="fileInput" accept=".csv">
+  </div>
+</section>
 
-    <script src="dashboard.js"></script>
+<!-- DASHBOARD -->
+<main id="dashboard">
+
+  <!-- PORTFOLIO COUNTERS -->
+  <div class="section-label">Portfolio Overview</div>
+  <div id="kpi-row">
+    <div class="kpi-cell" style="--accent-color: var(--accent2)">
+      <div class="kpi-label">Total Members</div>
+      <div class="kpi-value" id="kpi-members">—</div>
+      <div class="kpi-sub">borrowers</div>
+    </div>
+    <div class="kpi-cell" style="--accent-color: var(--accent)">
+      <div class="kpi-label">Portfolio (KES)</div>
+      <div class="kpi-value" id="kpi-portfolio">—</div>
+      <div class="kpi-sub">total principal</div>
+    </div>
+    <div class="kpi-cell" style="--accent-color: var(--warn)">
+      <div class="kpi-label">Required Provision</div>
+      <div class="kpi-value" id="kpi-provision">—</div>
+      <div class="kpi-sub">capital locked</div>
+    </div>
+    <div class="kpi-cell" style="--accent-color: var(--danger)">
+      <div class="kpi-label">Provision Ratio</div>
+      <div class="kpi-value" id="kpi-prov-ratio">—</div>
+      <div class="kpi-sub">of portfolio</div>
+    </div>
+    <div class="kpi-cell" style="--accent-color: var(--accent)">
+      <div class="kpi-label">Avg Repayment</div>
+      <div class="kpi-value" id="kpi-repay">—</div>
+      <div class="kpi-sub">portfolio avg</div>
+    </div>
+    <div class="kpi-cell" style="--accent-color: var(--warn)">
+      <div class="kpi-label">Avg Days Past Due</div>
+      <div class="kpi-value" id="kpi-dpd">—</div>
+      <div class="kpi-sub">average DPD</div>
+    </div>
+  </div>
+
+  <!-- CHART MATRIX -->
+  <div class="section-label">Risk Analytics</div>
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="card-title">
+        Risk Tier Distribution
+        <span class="badge">SASRA</span>
+      </div>
+      <div class="chart-canvas-wrap">
+        <canvas id="riskTierChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="card-title">
+        Provision Exposure by Tier
+        <span class="badge">KES</span>
+      </div>
+      <div class="chart-canvas-wrap">
+        <canvas id="provisionChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="card-title">
+        Repayment Rate Distribution
+        <span class="badge">%</span>
+      </div>
+      <div class="chart-canvas-wrap">
+        <canvas id="repayChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- BREAKDOWNS -->
+  <div class="matrix-grid">
+    <div class="tier-breakdown">
+      <div class="section-label">Tier Breakdown</div>
+      <div id="tierRows"><!-- filled by JS --></div>
+    </div>
+    <div class="dpd-card">
+      <div class="section-label">Days Past Due Buckets — Watch Tier</div>
+      <div class="dpd-grid" id="dpdGrid"><!-- filled by JS --></div>
+    </div>
+  </div>
+
+  <!-- HIGH RISK REGISTER -->
+  <div class="section-label">High-Risk Member Register</div>
+  <div class="table-card">
+    <div class="table-header">
+      <h3>Accounts Requiring Immediate Attention</h3>
+      <span class="count-badge" id="riskCount">— FLAGGED</span>
+    </div>
+    <div style="overflow-x: auto; width: 100%;">
+      <table id="riskTable">
+        <thead>
+          <tr>
+            <th>Member ID</th>
+            <th>Principal (KES)</th>
+            <th>Risk Tier</th>
+            <th>Days Past Due</th>
+            <th>Repayment Rate</th>
+            <th>Provision (KES)</th>
+            <th>Provision Rate</th>
+            <th>CRB Status</th>
+          </tr>
+        </thead>
+        <tbody id="riskTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ADDITIONAL METRICS -->
+  <div class="section-label">Loan Book Structure</div>
+  <div class="chart-grid" style="grid-template-columns: 1fr 2fr;">
+    <div class="chart-card">
+      <div class="card-title">
+        Loan Size Concentration
+        <span class="badge">MEMBERS</span>
+      </div>
+      <div class="chart-canvas-wrap">
+        <canvas id="loanSizeChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="card-title">
+        Score Distribution (300–900 scale)
+        <span class="badge">PREDICTIVE</span>
+      </div>
+      <div class="chart-canvas-wrap">
+        <canvas id="scoreDistributionChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer id="footer">
+  CREDIT RISK OPTIMIZATION FRAMEWORK · SASRA COMPLIANCE ENGINE · MWATHA MAINA ANALYTICS
+</footer>
+
+<script src="dashboard.js"></script>
 </body>
 </html>
-
-

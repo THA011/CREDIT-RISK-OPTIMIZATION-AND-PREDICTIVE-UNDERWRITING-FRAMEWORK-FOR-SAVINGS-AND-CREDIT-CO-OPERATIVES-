@@ -1,83 +1,199 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en" class="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Client Viewer</title>
+    <title>Secure Case Viewer | Mwatha Maina Analytics</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <script>
-        tailwind.config = { darkMode: 'class' };
-    </script>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        html.dark { background-color: #1a1a1a; }
+        body { font-family: 'IBM Plex Sans', sans-serif; }
+        .mono { font-family: 'IBM Plex Mono', monospace; }
+        html.dark { background-color: #0f172a; }
+        /* Style typography parsed from firestore */
+        .prose h1, .prose h2, .prose h3 { font-weight: 600; color: inherit; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+        .prose p { margin-bottom: 1rem; leading-ratio: 1.625; }
     </style>
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore-compat.js"></script>
-    <script src="firebase.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        emeraldCorp: '#00875a',
+                        slateDark: '#0f172a',
+                        slateCard: '#1e293b'
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body class="bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-gray-100">
-    <main class="max-w-3xl mx-auto p-4 space-y-6">
-        <header class="py-4">
-            <h1 id="title" class="text-2xl font-bold"></h1>
-            <div id="meta" class="text-sm text-gray-500"></div>
-        </header>
-        <article id="content" class="space-y-6"></article>
-        <section id="media" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></section>
+<body class="bg-slate-50 dark:bg-slateDark text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-300">
+    
+    <nav class="w-full bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 py-3.5 px-6">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <div class="text-sm font-mono tracking-tight text-slate-500 dark:text-slate-400">
+                <a href="index.html" class="hover:text-emeraldCorp transition-colors">← MWATHA MAINA</a> 
+                <span class="mx-2 text-slate-300 dark:text-slate-700">/</span> 
+                <span class="text-slate-900 dark:text-white font-medium">CLIENT_PORTAL</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <div id="badge-container" class="hidden font-mono text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                    <i class="fas fa-lock mr-1 text-emeraldCorp"></i> Verified
+                </div>
+                <button id="theme-toggle" class="p-1.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors text-xs text-slate-600 dark:text-slate-400">
+                    <i id="theme-icon" class="fas fa-sun"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-3xl mx-auto px-6 py-12 space-y-10">
+        
+        <div id="loader" class="text-center py-12 font-mono text-xs text-slate-400">
+            <i class="fas fa-circle-notch fa-spin mr-2 text-emeraldCorp"></i> Fetching records from database cluster...
+        </div>
+
+        <div id="viewer-content" class="hidden space-y-10">
+            <header class="border-b border-slate-200 dark:border-slate-800 pb-6">
+                <h1 id="title" class="text-3xl font-bold tracking-tight text-slate-900 dark:text-white mb-3"></h1>
+                <div class="flex items-center gap-4 text-xs font-mono text-slate-500 dark:text-slate-400">
+                    <span id="meta-visibility" class="flex items-center gap-1.5"></span>
+                    <span class="text-slate-300 dark:text-slate-700">|</span>
+                    <span>System: Encrypted Firestore Core</span>
+                </div>
+            </header>
+            
+            <article id="content" class="prose dark:prose-invert max-w-none text-slate-700 dark:text-slate-300 text-sm sm:text-base space-y-6 leading-relaxed"></article>
+            
+            <section class="pt-6 border-t border-slate-200 dark:border-slate-800">
+                <h3 class="font-mono text-xs font-semibold tracking-wider text-slate-400 dark:text-slate-500 uppercase mb-4">
+                    <i class="fas fa-photo-video mr-1.5"></i> Attached Analytical Visuals / Outputs
+                </h3>
+                <div id="media" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+            </section>
+        </div>
     </main>
+
+    <footer class="py-12 text-center text-slate-400 font-mono text-[11px]">
+        <p>Confidential Client Portal Gateway. Authorized Session Metrics Only.</p>
+    </footer>
 
     <script>
     (function(){
-      const { db } = window.initFirebaseApp();
+      // Safely fetch references down the pipeline
+      const { db } = window.initFirebaseApp ? window.initFirebaseApp() : { db: null };
       const params = new URLSearchParams(location.search);
       const projectId = params.get('project');
+      
+      const loader = document.getElementById('loader');
+      const container = document.getElementById('viewer-content');
       const titleEl = document.getElementById('title');
-      const metaEl = document.getElementById('meta');
+      const metaVisEl = document.getElementById('meta-visibility');
       const contentEl = document.getElementById('content');
       const mediaEl = document.getElementById('media');
+      const badgeContainer = document.getElementById('badge-container');
 
       async function load() {
-        if (!projectId) { contentEl.innerHTML = '<div>Missing project id.</div>'; return; }
-        const doc = await db.collection('projects').doc(projectId).get();
-        if (!doc.exists) { contentEl.innerHTML = '<div>Project not found.</div>'; return; }
-        const p = doc.data();
-        titleEl.textContent = p.title || projectId;
-        metaEl.textContent = `Visibility: ${p.visibility || 'private'}`;
-
-        // Partial view logic: show only first 1-2 sections for client visibility
-        let sections = Array.isArray(p.sections) ? p.sections : [];
-        const visibleSections = (p.visibility === 'client') ? sections.slice(0, 2) : (p.visibility === 'public' ? sections : sections.slice(0, 0));
-
-        if (visibleSections.length === 0) {
-          contentEl.innerHTML = '<div class="text-sm text-gray-500">No preview available.</div>';
-        } else {
-          contentEl.innerHTML = visibleSections.map(s => `
-            <section>
-              <h2 class="text-xl font-semibold mb-2">${s.heading || ''}</h2>
-              <div class="prose prose-invert max-w-none">${s.html || ''}</div>
-            </section>
-          `).join('');
+        if (!db) {
+          loader.innerHTML = '<span class="text-red-500"><i class="fas fa-exclamation-triangle"></i> Firebase Configuration Blocked or Missing.</span>';
+          return;
+        }
+        if (!projectId) { 
+          loader.innerHTML = '<span class="text-amber-500"><i class="fas fa-ban"></i> Execution Halted: Explicit project parameter required.</span>'; 
+          return; 
         }
 
-        // Media: for client visibility, show all media; for private, none; for public, all
-        const media = Array.isArray(p.media) ? p.media : [];
-        const showMedia = (p.visibility === 'client' || p.visibility === 'public') ? media : [];
-        mediaEl.innerHTML = showMedia.map(m => {
-          if ((m.contentType||'').startsWith('image/')) {
-            return `<img src="${m.url}" alt="${m.name}" class="w-full h-48 object-cover rounded">`;
-          } else if ((m.contentType||'').startsWith('video/')) {
-            return `<video src="${m.url}" controls class="w-full rounded"></video>`;
+        try {
+          const doc = await db.collection('projects').doc(projectId).get();
+          if (!doc.exists) { 
+            loader.innerHTML = '<span class="text-slate-500"><i class="fas fa-search"></i> Entity index matching that record ID cannot be located.</span>'; 
+            return; 
           }
-          return '';
-        }).join('');
+          
+          const p = doc.data();
+          
+          // Switch display state
+          loader.classList.add('hidden');
+          container.classList.remove('hidden');
+          badgeContainer.classList.remove('hidden');
+
+          titleEl.textContent = p.title || `Document [${projectId}]`;
+          
+          // Visibility mapping
+          const visibility = p.visibility || 'private';
+          metaVisEl.innerHTML = `<i class="fas ${visibility === 'private' ? 'fa-eye-slash text-red-400' : visibility === 'client' ? 'fa-user-shield text-amber-500' : 'fa-globe text-emeraldCorp'}"></i> Security Level: ${visibility.toUpperCase()}`;
+
+          // Slice engine handling logic for access levels
+          let sections = Array.isArray(p.sections) ? p.sections : [];
+          const visibleSections = (visibility === 'client') 
+            ? sections.slice(0, 2) 
+            : (visibility === 'public' ? sections : sections.slice(0, 0));
+
+          if (visibleSections.length === 0) {
+            contentEl.innerHTML = `
+              <div class="p-4 bg-amber-500/10 border border-amber-500/20 rounded font-mono text-xs text-amber-600 dark:text-amber-400">
+                <i class="fas fa-info-circle mr-1"></i> Under strict structural NDA. No public structural preview clearance exists for this credential.
+              </div>`;
+          } else {
+            contentEl.innerHTML = visibleSections.map(s => `
+              <section class="mb-6">
+                <h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white mb-2">${s.heading || ''}</h2>
+                <div class="text-slate-600 dark:text-slate-300 font-normal">${s.html || ''}</div>
+              </section>
+            `).join('');
+          }
+
+          // Render attached documentation images/videos
+          const media = Array.isArray(p.media) ? p.media : [];
+          const showMedia = (visibility === 'client' || visibility === 'public') ? media : [];
+          
+          if (showMedia.length === 0) {
+            mediaEl.innerHTML = '<div class="text-xs font-mono text-slate-400 col-span-2">No attachments provisioned for this view class.</div>';
+          } else {
+            mediaEl.innerHTML = showMedia.map(m => {
+              if ((m.contentType||'').startsWith('image/')) {
+                return `
+                  <div class="border border-slate-200 dark:border-slate-800 rounded bg-white dark:bg-slate-900 p-1.5 shadow-sm">
+                    <img src="${m.url}" alt="${m.name}" class="w-full h-48 object-cover rounded mb-1.5">
+                    <span class="block text-[10px] font-mono text-slate-400 px-1 truncate">${m.name || 'Analysis Plot'}</span>
+                  </div>`;
+              } else if ((m.contentType||'').startsWith('video/')) {
+                return `
+                  <div class="border border-slate-200 dark:border-slate-800 rounded bg-white dark:bg-slate-900 p-1.5 shadow-sm">
+                    <video src="${m.url}" controls class="w-full rounded mb-1.5"></video>
+                    <span class="block text-[10px] font-mono text-slate-400 px-1 truncate">${m.name || 'System Demo'}</span>
+                  </div>`;
+              }
+              return '';
+            }).join('');
+          }
+        } catch (error) {
+          loader.innerHTML = `<span class="text-red-500"><i class="fas fa-exclamation-triangle"></i> Stream Error: ${error.message}</span>`;
+        }
       }
 
       load();
     })();
+
+    // Theme Switch Engine
+    const toggleBtn = document.getElementById('theme-toggle');
+    const htmlElement = document.documentElement;
+    const icon = document.getElementById('theme-icon');
+
+    toggleBtn.addEventListener('click', () => {
+        if (htmlElement.classList.contains('dark')) {
+            htmlElement.classList.remove('dark');
+            htmlElement.classList.add('light');
+            icon.className = 'fas fa-moon';
+        } else {
+            htmlElement.classList.remove('light');
+            htmlElement.classList.add('dark');
+            icon.className = 'fas fa-sun';
+        }
+    });
     </script>
 </body>
 </html>
-
-
