@@ -1,0 +1,40 @@
+RUPSA Regulated NWDT Sacco Ltd branding and marketing visuals
+
+
+
+Based on the provided visual assets, here is the specific design and template guide for **RUPSA Regulated NWDT Sacco Ltd** branding and marketing visuals.
+
+---
+
+## 1. Color Palette & Typography
+
+* **Primary Corporate Color:** A vibrant **lime green / leaf green** used for primary text headers, background banners, and accent design lines.
+* **Secondary Corporate Color:** **Solid Black** for secondary text, the main "SACCO" wordmark, and body copy accents.
+* **Neutral Backgrounds:** **Pure White** is strictly used as the canvas for the bottom footer/branding strip to ensure clean legibility.
+* **Typography:** A clean, modern, bold sans-serif font is used for headings (e.g., as seen in the word "RUPSA" in `OIP.webp` and the header texts in `image_417f5b.png`). Occasional decorative brush/script fonts are reserved purely for celebratory or thematic titles like "Father's Day" in `image_417f3b.png`.
+
+## 2. Core Logo Anatomy (`OIP.webp`, `OIP_2.webp`)
+
+* **Iconography:** Features a green gradient pair of praying hands centrally placed over fan-spread stacks of currency notes.
+* **Text Layout:** The word **RUPSA** is rendered in bold lime green sans-serif directly underneath the hands, sitting above the word **—SACCO—**, which is written in solid black sandwiched between two thin horizontal black lines.
+
+## 3. General Poster Template Layout (`image_417f5b.png`, `image_417f3b.png`, `image_417ebd.png`)
+
+* **Top/Middle Section (Thematic Content):** High-quality lifestyle or promotional imagery (e.g., vehicles for loans, family portraits for holidays, or savings jars).
+* **Call-to-Action (CTA) Band:** A solid green horizontal banner placed near the bottom third of the poster containing the primary campaign offer or short-code instructions (e.g., *"For M-banking Services Simply Dial *879#"* in `image_417ebd.png`).
+* **Side Framing:** A clean, vertical dual line accent (one thin green line, one thin black line) sits vertically along the upper right-hand margin of the asset (`image_417f3b.png`, `image_417ebd.png`).
+
+---
+
+## 4. Standardized Footer Information (Mandatory Corporate Data)
+
+Every official visual features a unified, white-background footer divided by a thin vertical green separator line:
+
+* **Left Side of Footer:** The official **RUPSA SACCO** logo (`image_417f5b.png`, `image_417f3b.png`).
+* **Right Side of Footer (Specific Contact Text):**
+* **Official Entity Name:** `RUPSA Regulated NWDT Sacco Ltd`
+* **Phone Lines:** `CALL +254717 604 010, +254748 363 039`
+* **Postal Address:** `P.O BOX 1497-00232, Ruiru Kamiti Road opp. Spinners & Spinners`
+* **Email & Web Contact:** Depending on the specific campaign variation, this is rendered in green text as either:
+* `Email. info@rupsasacco.com / Website. [www.rupsasacco.com](https://www.rupsasacco.com)` (as seen in `image_417f3b.png`)
+* `Mail. info@pcearuirusacco.com / Website. [www.pcearuirusacco.com](https://www.pcearuirusacco.com)` (as seen in `image_417f5b.png` and `image_417ebd.png`)
